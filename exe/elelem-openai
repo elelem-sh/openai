@@ -5,4 +5,4 @@ require "elelem/cli"
 
 Signal.trap("INT") { exit 1 }
 
-Elelem::CLI.new(["chat", "--provider", "openai", *ARGV]).run
+Elelem::CLI.new(ARGV, provider: "openai").run
