@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require "elelem"
-require_relative "../openai"
+require "elelem/plugins"
+require_relative "../../openai"
 
 Elelem::Providers.register(:openai) do
   Elelem::OpenAI::Client.new(
