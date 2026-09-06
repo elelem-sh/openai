@@ -1,9 +1,5 @@
 # frozen_string_literal: true
 
-require "json"
-require "net/http"
-require "uri"
-
 module Elelem
   module OpenAI
     class Client

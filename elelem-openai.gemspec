@@ -27,8 +27,7 @@ Gem::Specification.new do |spec|
   spec.executables = ["elelem-openai"]
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "elelem-plugins", "~> 0.1"
-  spec.add_dependency "elelem-cli", "~> 0.1"
+  spec.add_dependency "elelem", "~> 0.10"
   spec.add_dependency "json", "~> 2.21"
   spec.add_dependency "net-http", "~> 0.9"
   spec.add_dependency "uri", "~> 1.1"
