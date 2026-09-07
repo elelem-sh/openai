@@ -2,7 +2,7 @@
 
 module Elelem
   module OpenAI
-    class Client
+    class Provider
       def initialize(model:, api_key:, base_url: "https://api.openai.com/v1", read_timeout: 3600, open_timeout: 10)
         @uri = URI.join("#{base_url}/", "chat/completions")
         @model = model
