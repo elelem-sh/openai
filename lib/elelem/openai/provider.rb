@@ -11,15 +11,15 @@ module Elelem
         @open_timeout = open_timeout
       end
 
-      def fetch(messages, tools = [], &block)
+      def fetch(messages, tools = [], &)
         tool_calls = {}
         body = build_request_body(messages, tools)
 
         stream(body) do |event|
-          handle_event(event, tool_calls, &block)
+          handle_event(event, tool_calls, &)
         end
 
-        finalize_tool_calls(tool_calls, &block)
+        finalize_tool_calls(tool_calls, &)
       end
 
       private
@@ -46,7 +46,7 @@ module Elelem
         end
       end
 
-      def stream(body)
+      def stream(body, &)
         request = Net::HTTP::Post.new(@uri)
         request["content-type"] = "application/json"
         request["authorization"] = "Bearer #{@api_key}"
@@ -61,7 +61,7 @@ module Elelem
           conn.request(request) do |response|
             raise "HTTP #{response.code}: #{response.body}" unless response.is_a?(Net::HTTPSuccess)
 
-            read_sse_stream(response) { |event| yield event }
+            read_sse_stream(response, &)
           end
         end
       end
