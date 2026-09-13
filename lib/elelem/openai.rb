@@ -9,9 +9,9 @@ require_relative "openai/version"
 require_relative "openai/provider"
 
 Elelem.configure do |config|
-  config.provider(:openai) do
+  config.provider(:openai) do |model: nil, **|
     Elelem::OpenAI::Provider.new(
-      model: ENV.fetch("OPENAI_MODEL", "gpt-4o"),
+      model: model || ENV.fetch("OPENAI_MODEL", "gpt-4o"),
       api_key: ENV.fetch("OPENAI_API_KEY")
     )
   end
