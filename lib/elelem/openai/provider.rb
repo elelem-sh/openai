@@ -3,12 +3,14 @@
 module Elelem
   module OpenAI
     class Provider
-      def initialize(model:, api_key:, base_url: "https://api.openai.com/v1", read_timeout: 3600, open_timeout: 10)
+      def initialize(model:, api_key:, base_url: "https://api.openai.com/v1", read_timeout: 3600, open_timeout: 10,
+                     http: nil)
         @uri = URI.join("#{base_url}/", "chat/completions")
         @model = model
         @api_key = api_key
         @read_timeout = read_timeout
         @open_timeout = open_timeout
+        @http = http
       end
 
       def fetch(messages, tools = [], &)
@@ -47,23 +49,15 @@ module Elelem
       end
 
       def stream(body, &)
-        request = Net::HTTP::Post.new(@uri)
-        request["content-type"] = "application/json"
-        request["authorization"] = "Bearer #{@api_key}"
-        request.body = JSON.generate(body)
+        http.post(@uri, api_key: @api_key, body:) do |response|
+          raise "HTTP #{response.code}: #{response.body}" unless response.is_a?(Net::HTTPSuccess)
 
-        http = Net::HTTP.new(@uri.host, @uri.port)
-        http.use_ssl = @uri.scheme == "https"
-        http.read_timeout = @read_timeout
-        http.open_timeout = @open_timeout
-
-        http.start do |conn|
-          conn.request(request) do |response|
-            raise "HTTP #{response.code}: #{response.body}" unless response.is_a?(Net::HTTPSuccess)
-
-            read_sse_stream(response, &)
-          end
+          read_sse_stream(response, &)
         end
+      end
+
+      def http
+        @http ||= HttpAdapter.new(read_timeout: @read_timeout, open_timeout: @open_timeout)
       end
 
       def read_sse_stream(response)
@@ -88,6 +82,29 @@ module Elelem
             name: tool_call[:name],
             arguments: JSON.parse(tool_call[:args])
           }.tap { |result| block.call(result.merge(type: "doing")) }
+        end
+      end
+
+      class HttpAdapter
+        def initialize(read_timeout:, open_timeout:)
+          @read_timeout = read_timeout
+          @open_timeout = open_timeout
+        end
+
+        def post(uri, api_key:, body:, &)
+          request = Net::HTTP::Post.new(uri)
+          request["content-type"] = "application/json"
+          request["authorization"] = "Bearer #{api_key}"
+          request.body = JSON.generate(body)
+
+          http = Net::HTTP.new(uri.host, uri.port)
+          http.use_ssl = uri.scheme == "https"
+          http.read_timeout = @read_timeout
+          http.open_timeout = @open_timeout
+
+          http.start do |conn|
+            conn.request(request, &)
+          end
         end
       end
     end
