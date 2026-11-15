@@ -12,11 +12,16 @@ Elelem.configure do |config|
   # OPENAI_BASE_URL points at any Chat Completions server, such as a local
   # one that needs no key.
   config.provider(:openai) do |model: nil, **|
-    custom = ENV["OPENAI_BASE_URL"].to_s
+    # A variable that is set but empty counts as unset.
+    env = ->(name) { ENV[name].to_s.strip.then { |v| v.empty? ? nil : v } }
+    custom = env.call("OPENAI_BASE_URL")
+    key = env.call("OPENAI_API_KEY")
+    raise KeyError, "OPENAI_API_KEY is not set" if key.nil? && custom.nil?
+
     Elelem::OpenAI::Provider.new(
-      model: model || ENV.fetch("OPENAI_MODEL", "gpt-4o"),
-      api_key: custom.empty? ? ENV.fetch("OPENAI_API_KEY") : ENV.fetch("OPENAI_API_KEY", ""),
-      base_url: custom.empty? ? "https://api.openai.com/v1" : custom
+      model: model || env.call("OPENAI_MODEL") || "gpt-4o",
+      api_key: key.to_s,
+      base_url: custom || "https://api.openai.com/v1"
     )
   end
 end
