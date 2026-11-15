@@ -27,7 +27,23 @@ module Elelem
       private
 
       def build_request_body(messages, tools)
-        { model: @model, messages:, stream: true, tools:, tool_choice: "auto" }
+        body = { model: @model, messages: messages.map { |m| normalize(m) }, stream: true }
+        tools.empty? ? body : body.merge(tools:, tool_choice: "auto")
+      end
+
+      # elelem keeps tool calls as {id, name, arguments: Hash}. Chat Completions
+      # wants {id, type: "function", function: {name, arguments: "<json>"}}.
+      def normalize(message)
+        calls = message[:tool_calls]
+        return message unless calls
+
+        message.merge(tool_calls: calls.map { |call| to_openai(call) })
+      end
+
+      def to_openai(call)
+        arguments = call[:arguments]
+        arguments = JSON.generate(arguments || {}) unless arguments.is_a?(String)
+        { id: call[:id], type: "function", function: { name: call[:name], arguments: } }
       end
 
       def handle_event(event, tool_calls, &block)
@@ -80,7 +96,7 @@ module Elelem
           {
             id: tool_call[:id],
             name: tool_call[:name],
-            arguments: JSON.parse(tool_call[:args])
+            arguments: tool_call[:args].strip.empty? ? {} : JSON.parse(tool_call[:args])
           }.tap { |result| block.call(result.merge(type: "doing")) }
         end
       end

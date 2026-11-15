@@ -37,10 +37,30 @@ RSpec.describe Elelem::OpenAI::Provider do
   end
 
   describe "#fetch" do
-    it "always sends tools and tool_choice" do
+    it "leaves out tools and tool_choice when there are no tools" do
       provider.fetch(messages, [])
 
-      expect(body).to eq(model: "gpt-4o", messages:, stream: true, tools: [], tool_choice: "auto")
+      expect(body).to eq(model: "gpt-4o", messages:, stream: true)
+    end
+
+    it "sends tools with tool_choice auto" do
+      tools = [{ type: "function", function: { name: "read" } }]
+      provider.fetch(messages, tools)
+
+      expect(body).to include(tools:, tool_choice: "auto")
+    end
+
+    it "sends earlier tool calls in the Chat Completions shape" do
+      history = messages + [
+        { role: "assistant", content: "", tool_calls: [{ id: "1", name: "read", arguments: { "path" => "a.rb" } }] },
+        { role: "tool", tool_call_id: "1", content: "{}" }
+      ]
+      provider.fetch(history, [])
+
+      expect(body[:messages][1][:tool_calls]).to eq(
+        [{ id: "1", type: "function", function: { name: "read", arguments: '{"path":"a.rb"}' } }]
+      )
+      expect(body[:messages][2]).to eq(history[2])
     end
 
     context "with a text delta" do
@@ -81,8 +101,8 @@ RSpec.describe Elelem::OpenAI::Provider do
                                                            "function" => { "name" => "read" } }] } }] }]
       end
 
-      it "raises instead of defaulting to an empty hash" do
-        expect { provider.fetch(messages, []) {} }.to raise_error(JSON::ParserError)
+      it "takes them as an empty hash" do
+        expect(provider.fetch(messages, []) {}).to eq([{ id: "1", name: "read", arguments: {} }])
       end
     end
   end
