@@ -24,4 +24,13 @@ RSpec.describe "the openai provider" do
 
     expect(uri).to eq("http://127.0.0.1:8080/v1/chat/completions")
   end
+
+  it "takes a base URL with a trailing slash, and treats an empty one as unset" do
+    ENV["OPENAI_API_KEY"] = "sk-test"
+    ENV["OPENAI_BASE_URL"] = "http://127.0.0.1:8080/v1/"
+    expect(uri).to eq("http://127.0.0.1:8080/v1/chat/completions")
+
+    ENV["OPENAI_BASE_URL"] = ""
+    expect(uri).to eq("https://api.openai.com/v1/chat/completions")
+  end
 end

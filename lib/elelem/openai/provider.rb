@@ -5,7 +5,7 @@ module Elelem
     class Provider
       def initialize(model:, api_key:, base_url: "https://api.openai.com/v1", read_timeout: 3600, open_timeout: 10,
                      http: nil)
-        @uri = URI.join("#{base_url}/", "chat/completions")
+        @uri = URI.join("#{base_url.chomp("/")}/", "chat/completions")
         @model = model
         @api_key = api_key
         @read_timeout = read_timeout
@@ -110,7 +110,7 @@ module Elelem
         def post(uri, api_key:, body:, &)
           request = Net::HTTP::Post.new(uri)
           request["content-type"] = "application/json"
-          request["authorization"] = "Bearer #{api_key}"
+          request["authorization"] = "Bearer #{api_key}" unless api_key.to_s.empty?
           request.body = JSON.generate(body)
 
           http = Net::HTTP.new(uri.host, uri.port)
