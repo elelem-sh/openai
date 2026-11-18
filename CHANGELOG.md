@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/elelem-sh/openai/compare/v0.3.0...v0.3.1) (2026-11-18)
+
+
+### Bug Fixes
+
+* **deps:** accept the json that Ruby 4.0 ships ([3c856d4](https://github.com/elelem-sh/openai/commit/3c856d43e90bdcde09134d512bf60d4ba9db907e))
+
 ## [0.3.0](https://github.com/elelem-sh/openai/compare/v0.2.0...v0.3.0) (2026-11-16)
 
 
