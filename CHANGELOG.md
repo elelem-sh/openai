@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.4.0](https://github.com/elelem-sh/openai/compare/v0.3.1...v0.4.0) (2026-11-19)
+
+
+### Features
+
+* stream over a kept-alive connection that retries busy servers ([6463020](https://github.com/elelem-sh/openai/commit/6463020dc62edab070b1aa753b7ff278f3504162))
+
+
+### Bug Fixes
+
+* say when a content filter stops a reply ([c02d2ec](https://github.com/elelem-sh/openai/commit/c02d2ec889c6be7f0a5cd3953df3c84f9169cd0d))
+* say when a reply hits the output limit ([d8005bd](https://github.com/elelem-sh/openai/commit/d8005bdba722a44ce6492fb227d3cd087a807dda))
+
 ## [0.3.1](https://github.com/elelem-sh/openai/compare/v0.3.0...v0.3.1) (2026-11-18)
 
 
