@@ -83,6 +83,14 @@ RSpec.describe Elelem::OpenAI::Provider do
       end
     end
 
+    context "with a filtered reply" do
+      let(:events) { [{ "choices" => [{ "delta" => {}, "finish_reason" => "content_filter" }] }] }
+
+      it "raises" do
+        expect { provider.fetch(messages, []) {} }.to raise_error(/stopped by a content filter/)
+      end
+    end
+
     it "sends tools with tool_choice auto" do
       tools = [{ type: "function", function: { name: "read" } }]
       provider.fetch(messages, tools)

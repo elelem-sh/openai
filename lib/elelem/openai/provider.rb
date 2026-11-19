@@ -67,7 +67,10 @@ module Elelem
 
       # Raises before a cut-off tool call is parsed.
       def stopped(reason)
-        raise "the reply hit the model's output limit before it ended" if reason == "length"
+        case reason
+        when "length" then raise "the reply hit the model's output limit before it ended"
+        when "content_filter" then raise "the reply was stopped by a content filter"
+        end
       end
 
       def stream(body)
