@@ -70,6 +70,19 @@ RSpec.describe Elelem::OpenAI::Provider do
       expect(seen).to eq([{ type: "saying", text: "hi" }])
     end
 
+    context "with a tool call cut off at the output limit" do
+      let(:events) do
+        [{ "choices" => [{ "delta" => { "tool_calls" => [{ "index" => 0, "id" => "1",
+                                                           "function" => { "name" => "write",
+                                                                           "arguments" => '{"path":"a' } }] } }] },
+         { "choices" => [{ "delta" => {}, "finish_reason" => "length" }] }]
+      end
+
+      it "says so instead of failing to parse half the arguments" do
+        expect { provider.fetch(messages, []) {} }.to raise_error(/output limit before it ended/)
+      end
+    end
+
     it "sends tools with tool_choice auto" do
       tools = [{ type: "function", function: { name: "read" } }]
       provider.fetch(messages, tools)

@@ -47,6 +47,7 @@ module Elelem
       end
 
       def handle_event(event, tool_calls, &block)
+        stopped(event.dig("choices", 0, "finish_reason"))
         delta = event.dig("choices", 0, "delta") || {}
 
         block.call(type: "saying", text: delta["content"]) if delta["content"]
@@ -62,6 +63,11 @@ module Elelem
           tool_calls[index][:name] ||= tool_call.dig("function", "name")
           tool_calls[index][:args] << tool_call.dig("function", "arguments").to_s
         end
+      end
+
+      # Raises before a cut-off tool call is parsed.
+      def stopped(reason)
+        raise "the reply hit the model's output limit before it ended" if reason == "length"
       end
 
       def stream(body)
