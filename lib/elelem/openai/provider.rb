@@ -64,31 +64,19 @@ module Elelem
         end
       end
 
-      def stream(body, &)
-        http.post(@uri, api_key: @api_key, body:) do |response|
-          raise "HTTP #{response.code}: #{response.body}" unless response.is_a?(Net::HTTPSuccess)
-
-          read_sse_stream(response, &)
+      def stream(body)
+        http.post(@uri, body:, headers:) do |response|
+          Elelem::HTTP.events(response) { |data| yield JSON.parse(data) }
         end
+      end
+
+      # A local server may need no key.
+      def headers
+        @api_key.to_s.empty? ? {} : { "authorization" => "Bearer #{@api_key}" }
       end
 
       def http
-        @http ||= HttpAdapter.new(read_timeout: @read_timeout, open_timeout: @open_timeout)
-      end
-
-      def read_sse_stream(response)
-        buffer = String.new
-
-        response.read_body do |chunk|
-          buffer << chunk
-
-          while (index = buffer.index("\n"))
-            line = buffer.slice!(0, index + 1).strip
-            next unless line.start_with?("data: ") && line != "data: [DONE]"
-
-            yield JSON.parse(line.delete_prefix("data: "))
-          end
-        end
+        @http ||= Elelem::HTTP.new(read_timeout: @read_timeout, open_timeout: @open_timeout)
       end
 
       def finalize_tool_calls(tool_calls, &block)
@@ -98,29 +86,6 @@ module Elelem
             name: tool_call[:name],
             arguments: tool_call[:args].strip.empty? ? {} : JSON.parse(tool_call[:args])
           }.tap { |result| block.call(result.merge(type: "doing")) }
-        end
-      end
-
-      class HttpAdapter
-        def initialize(read_timeout:, open_timeout:)
-          @read_timeout = read_timeout
-          @open_timeout = open_timeout
-        end
-
-        def post(uri, api_key:, body:, &)
-          request = Net::HTTP::Post.new(uri)
-          request["content-type"] = "application/json"
-          request["authorization"] = "Bearer #{api_key}" unless api_key.to_s.empty?
-          request.body = JSON.generate(body)
-
-          http = Net::HTTP.new(uri.host, uri.port)
-          http.use_ssl = uri.scheme == "https"
-          http.read_timeout = @read_timeout
-          http.open_timeout = @open_timeout
-
-          http.start do |conn|
-            conn.request(request, &)
-          end
         end
       end
     end

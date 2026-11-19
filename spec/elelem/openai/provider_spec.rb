@@ -19,14 +19,15 @@ RSpec.describe Elelem::OpenAI::Provider do
 
   let(:http) do
     Class.new do
-      attr_reader :body
+      attr_reader :body, :headers
 
       def initialize(response)
         @response = response
       end
 
-      def post(_uri, body:, **)
+      def post(_uri, body:, headers: {})
         @body = body
+        @headers = headers
         yield @response
       end
     end.new(response)
@@ -41,6 +42,32 @@ RSpec.describe Elelem::OpenAI::Provider do
       provider.fetch(messages, [])
 
       expect(body).to eq(model: "gpt-4o", messages:, stream: true)
+    end
+
+    it "sends the key as a bearer token" do
+      provider.fetch(messages, [])
+
+      expect(http.headers).to eq("authorization" => "Bearer sk-test")
+    end
+
+    context "without a key, as for a local server" do
+      let(:params) { { api_key: "" } }
+
+      it "sends no authorization header" do
+        provider.fetch(messages, [])
+
+        expect(http.headers).to eq({})
+      end
+    end
+
+    it "reads events split by CRLF" do
+      allow(response).to receive(:read_body)
+        .and_yield(%(data: {"choices":[{"delta":{"content":"hi"}}]}\r\n\r\ndata: [DONE]\r\n))
+      seen = []
+
+      provider.fetch(messages, []) { |event| seen << event }
+
+      expect(seen).to eq([{ type: "saying", text: "hi" }])
     end
 
     it "sends tools with tool_choice auto" do

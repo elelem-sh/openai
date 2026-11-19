@@ -15,7 +15,9 @@ RSpec.describe "a tool call round trip through Elelem::Agent" do
         @requests << body
         problem = invalid(body[:messages])
         events = @requests.size == 1 ? tool_call : reply
-        yield(problem ? bad_request(problem) : ok(events))
+        raise "HTTP 400: invalid tool call: #{problem}" if problem
+
+        yield ok(events)
       end
 
       private
@@ -37,12 +39,6 @@ RSpec.describe "a tool call round trip through Elelem::Agent" do
         Net::HTTPOK.new("1.1", "200", "OK").tap do |res|
           data = events.map { |e| "data: #{JSON.generate(e)}\n" }.join << "data: [DONE]\n"
           res.define_singleton_method(:read_body) { |&block| block.call(data) }
-        end
-      end
-
-      def bad_request(problem)
-        Net::HTTPBadRequest.new("1.1", "400", "Bad Request").tap do |res|
-          res.define_singleton_method(:body) { "invalid tool call: #{problem}" }
         end
       end
     end.new

@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 require "elelem"
+require "elelem/http"
 require "json"
-require "net/http"
 require "uri"
 
 require_relative "openai/version"
