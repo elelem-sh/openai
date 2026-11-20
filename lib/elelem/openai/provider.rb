@@ -8,7 +8,7 @@ module Elelem
         @uri = URI.join("#{base_url.chomp("/")}/", "chat/completions")
         @model = model
         @key_command = key_command
-        @api_key = key_command ? key_command.call : api_key
+        @api_key = api_key unless key_command
         @read_timeout = read_timeout
         @open_timeout = open_timeout
         @http = http
@@ -79,7 +79,7 @@ module Elelem
       rescue RuntimeError => e
         raise unless renewable?(e)
 
-        @api_key = @key_command.call
+        @api_key = nil
         post(body, &)
       end
 
@@ -93,8 +93,10 @@ module Elelem
 
       # A local server may need no key.
       def headers
-        @api_key.to_s.empty? ? {} : { "authorization" => "Bearer #{@api_key}" }
+        api_key.to_s.empty? ? {} : { "authorization" => "Bearer #{api_key}" }
       end
+
+      def api_key = @api_key ||= @key_command.call
 
       def http
         @http ||= Elelem::HTTP.new(read_timeout: @read_timeout, open_timeout: @open_timeout)
