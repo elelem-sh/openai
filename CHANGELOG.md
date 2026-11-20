@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.5.0](https://github.com/elelem-sh/openai/compare/v0.4.0...v0.5.0) (2026-11-20)
+
+
+### Features
+
+* take the key from OPENAI_API_KEY_COMMAND, and run it again on a 401 before one retry ([c9587db](https://github.com/elelem-sh/openai/commit/c9587db68bc3d076aec4887265b2fae969f6f610))
+
+
+### Bug Fixes
+
+* run OPENAI_API_KEY_COMMAND at the first request, fail on a non-zero exit with its stderr, and name both variables when no key is set ([9d915c5](https://github.com/elelem-sh/openai/commit/9d915c5ade00a4154722512f03f6f14b92c1f336))
+
 ## [0.4.0](https://github.com/elelem-sh/openai/compare/v0.3.1...v0.4.0) (2026-11-19)
 
 
