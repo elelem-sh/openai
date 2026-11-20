@@ -2,12 +2,17 @@
 
 RSpec.describe "the openai provider" do
   around do |example|
-    saved = ENV.to_h.slice("OPENAI_API_KEY", "OPENAI_BASE_URL", "OPENAI_MODEL")
+    saved = ENV.to_h.slice(*variables)
+    variables.each { ENV.delete(it) }
     example.run
   ensure
-    %w[OPENAI_API_KEY OPENAI_BASE_URL OPENAI_MODEL].each { |k| ENV.delete(k) }
+    variables.each { ENV.delete(it) }
     ENV.update(saved)
   end
+
+  def variables = %w[OPENAI_API_KEY OPENAI_API_KEY_COMMAND OPENAI_BASE_URL OPENAI_MODEL]
+
+  def key = Elelem::Config.build_provider("openai").instance_variable_get(:@api_key)
 
   def uri = Elelem::Config.build_provider("openai").instance_variable_get(:@uri).to_s
 
@@ -42,5 +47,24 @@ RSpec.describe "the openai provider" do
 
     ENV["OPENAI_API_KEY"] = ""
     expect { Elelem::Config.build_provider("openai") }.to raise_error(KeyError, /OPENAI_API_KEY/)
+  end
+
+  it "takes the key that OPENAI_API_KEY_COMMAND prints" do
+    ENV["OPENAI_API_KEY_COMMAND"] = "echo sk-printed"
+
+    expect(key).to eq("sk-printed")
+  end
+
+  it "prefers OPENAI_API_KEY to the command, without running it" do
+    ENV["OPENAI_API_KEY"] = "sk-test"
+    ENV["OPENAI_API_KEY_COMMAND"] = "false"
+
+    expect(key).to eq("sk-test")
+  end
+
+  it "names OPENAI_API_KEY_COMMAND when it prints nothing" do
+    ENV["OPENAI_API_KEY_COMMAND"] = "true"
+
+    expect { key }.to raise_error(KeyError, /OPENAI_API_KEY_COMMAND printed no key: true/)
   end
 end

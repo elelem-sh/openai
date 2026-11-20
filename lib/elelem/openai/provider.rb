@@ -3,11 +3,12 @@
 module Elelem
   module OpenAI
     class Provider
-      def initialize(model:, api_key:, base_url: "https://api.openai.com/v1", read_timeout: 3600, open_timeout: 10,
-                     http: nil)
+      def initialize(model:, api_key: "", key_command: nil, base_url: "https://api.openai.com/v1", read_timeout: 3600,
+                     open_timeout: 10, http: nil)
         @uri = URI.join("#{base_url.chomp("/")}/", "chat/completions")
         @model = model
-        @api_key = api_key
+        @key_command = key_command
+        @api_key = key_command ? key_command.call : api_key
         @read_timeout = read_timeout
         @open_timeout = open_timeout
         @http = http
@@ -73,11 +74,22 @@ module Elelem
         end
       end
 
-      def stream(body)
+      def stream(body, &)
+        post(body, &)
+      rescue RuntimeError => e
+        raise unless renewable?(e)
+
+        @api_key = @key_command.call
+        post(body, &)
+      end
+
+      def post(body)
         http.post(@uri, body:, headers:) do |response|
           Elelem::HTTP.events(response) { |data| yield JSON.parse(data) }
         end
       end
+
+      def renewable?(error) = @key_command && error.message.start_with?("HTTP 401")
 
       # A local server may need no key.
       def headers
